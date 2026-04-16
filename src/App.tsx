@@ -59,7 +59,9 @@ function SlideCraftApp() {
       setUser(currentUser);
       setIsAuthReady(true);
       if (currentUser) {
-        saveUserProfile(currentUser);
+        saveUserProfile(currentUser).catch(err => {
+          console.error("Failed to save user profile:", err);
+        });
       }
     });
     return () => unsubscribe();
@@ -68,10 +70,15 @@ function SlideCraftApp() {
   // Sync Projects with Firestore
   useEffect(() => {
     if (user) {
-      const unsubscribe = subscribeToProjects((updatedProjects) => {
-        setProjects(updatedProjects);
-      });
-      return () => unsubscribe();
+      try {
+        const unsubscribe = subscribeToProjects((updatedProjects) => {
+          setProjects(updatedProjects);
+        });
+        return () => unsubscribe();
+      } catch (err) {
+        console.error("Failed to subscribe to projects:", err);
+        toast.error("Cloud sync failed. Check console for details.");
+      }
     } else {
       setProjects([]);
     }
@@ -195,7 +202,7 @@ function SlideCraftApp() {
     );
   }
   return (
-    <div className="min-h-screen bg-[#fafafa] text-[#1a1a1a] font-sans selection:bg-orange-100 selection:text-orange-900">
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-accent/30 selection:text-accent">
       <Toaster position="top-center" />
       
       {/* Sidebar Navigation */}

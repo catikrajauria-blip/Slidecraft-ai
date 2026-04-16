@@ -1,6 +1,17 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+
+function getAI() {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not defined. Please add it to your environment variables.");
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+}
 
 export interface EnhancedSlide {
   title: string;
@@ -16,6 +27,7 @@ export interface EnhancedSlide {
 }
 
 export async function enhancePresentation(slidesText: string, instructions?: string): Promise<EnhancedSlide[]> {
+  const ai = getAI();
   const prompt = `
     You are an expert presentation designer. I will provide you with the raw text content of a PowerPoint presentation.
     Your task is to:
@@ -72,6 +84,7 @@ export async function enhancePresentation(slidesText: string, instructions?: str
 }
 
 export async function chatWithPresentation(history: any[], message: string) {
+  const ai = getAI();
   const chat = ai.chats.create({
     model: "gemini-3-flash-preview",
     history: history,
