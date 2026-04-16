@@ -102,20 +102,34 @@ function SlideCraftApp() {
 
     if (!user) {
       toast.error("Please sign in to create a project.");
+      e.target.value = '';
       return;
     }
 
     setIsProcessing(true);
-    toast.info("Processing presentation...");
+    toast.info("Reading presentation file...");
 
     try {
       const slides = await parsePptx(file);
+      
+      if (slides.length === 0) {
+        toast.error("No readable text found in the presentation. Try another file.");
+        setIsProcessing(false);
+        e.target.value = '';
+        return;
+      }
+
       const fullText = slides.map(s => s.text.join(' ')).join('\n\n');
       
+      toast.info("AI is enhancing your slides...");
       const enhancedSlides = await enhancePresentation(fullText);
       
+      if (enhancedSlides.length === 0) {
+        throw new Error("AI failed to generate enhanced slides.");
+      }
+      
       const newProject: Project = {
-        id: crypto.randomUUID(),
+        id: window.crypto?.randomUUID?.() || Math.random().toString(36).substring(2),
         name: file.name.replace('.pptx', ''),
         createdAt: Date.now(),
         slides: enhancedSlides,
@@ -127,10 +141,12 @@ function SlideCraftApp() {
       setActiveTab('editor');
       toast.success("Presentation enhanced successfully!");
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to process presentation.");
+      console.error("Upload error:", error);
+      const message = error instanceof Error ? error.message : "Failed to process presentation.";
+      toast.error(message);
     } finally {
       setIsProcessing(false);
+      e.target.value = '';
     }
   };
 
